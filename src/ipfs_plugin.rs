@@ -11,7 +11,10 @@ pub struct IpfsCipher {
 impl IpfsCipher {
     /// Inițializează plugin-ul cu o cheie sigură și cipher-ul implicit
     pub fn new(secret_key: Vec<u8>) -> Self {
-        
+        Self {
+            key: SecretVec::from(secret_key),
+            cipher: Cipher::ChaCha20Poly1305,
+        }
     }
 
 }
