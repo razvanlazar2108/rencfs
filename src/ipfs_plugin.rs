@@ -66,5 +66,12 @@ mod tests {
 
         let original_data = b"Date secrete trimise prin IPFS cu CID unic!";
 
+        // 1. Criptăm datele
+        let encrypted = cipher.encrypt(original_data).expect("Criptarea a eșuat");
+        assert_ne!(original_data.to_vec(), encrypted, "Datele criptate nu trebuie să fie la fel ca cele originale");
+
+        // 2. Decriptăm datele înapoi
+        let decrypted = cipher.decrypt(&encrypted).expect("Decriptarea a eșuat");
+        assert_eq!(original_data.to_vec(), decrypted, "Datele decriptate nu se potrivesc cu cele originale");
     }
 }
