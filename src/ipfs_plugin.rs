@@ -59,5 +59,12 @@ mod tests {
     use super::*;
 
     #[test]
-    
+    fn test_ipfs_encryption_decryption() {
+        // Generăm o cheie de test de 32 de bytes (pentru ChaCha20Poly1305)
+        let test_key = vec![0u8; 32];
+        let cipher = IpfsCipher::new(test_key);
+
+        let original_data = b"Date secrete trimise prin IPFS cu CID unic!";
+
+    }
 }
