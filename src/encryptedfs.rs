@@ -1,3 +1,4 @@
+use crate::ipfs_plugin::IpfsCipher;
 use argon2::password_hash::rand_core::RngCore;
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
@@ -574,6 +575,7 @@ pub struct EncryptedFs {
     sizes_read: Mutex<HashMap<u64, AtomicU64>>,
     requested_read: Mutex<HashMap<u64, AtomicU64>>,
     read_only: bool,
+    pub ipfs_cipher: Option<IpfsCipher>,
 }
 
 impl EncryptedFs {
@@ -627,6 +629,7 @@ impl EncryptedFs {
             sizes_read: Mutex::default(),
             requested_read: Mutex::default(),
             read_only,
+            ipfs_cipher: None,
         };
 
         let arc = Arc::new(fs);
@@ -638,6 +641,8 @@ impl EncryptedFs {
         arc.ensure_root_exists().await?;
 
         Ok(arc)
+
+        
     }
 
     pub fn exists(&self, ino: u64) -> bool {
@@ -2461,6 +2466,9 @@ impl EncryptedFs {
 
             return ino;
         }
+    }
+    pub fn enable_ipfs_plugin(&mut self, master_key: Vec<u8>) {
+        self.ipfs_cipher = Some(IpfsCipher::new(master_key));
     }
 }
 pub struct CopyFileRangeReq {
