@@ -44,6 +44,12 @@ impl IpfsCipher {
             return Ok(Vec::new());
         }
 
-        
+        let mut reader = crypto::create_read(encrypted_data, self.cipher, &self.key);
+        let mut decrypted_data = Vec::new();
+
+        reader.read_to_end(&mut decrypted_data)
+            .map_err(|e| format!("Eroare la decriptarea datelor IPFS: {:?}", e))?;
+
+        Ok(decrypted_data)
     }
 }
