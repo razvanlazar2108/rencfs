@@ -7,3 +7,11 @@ pub struct IpfsCipher {
     key: SecretVec<u8>,
     cipher: Cipher,
 }
+
+impl IpfsCipher {
+    /// Inițializează plugin-ul cu o cheie sigură și cipher-ul implicit
+    pub fn new(secret_key: Vec<u8>) -> Self {
+        
+    }
+
+}
