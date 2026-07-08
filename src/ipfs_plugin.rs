@@ -37,4 +37,13 @@ impl IpfsCipher {
         // Extriem vectorul de bytes din interiorul cursorului
         Ok(finished_cursor.into_inner())
     }
+
+    /// Decriptează un bloc de date utilizând CryptoRead-ul nativ din rencfs
+    pub fn decrypt(&self, encrypted_data: &[u8]) -> Result<Vec<u8>, String> {
+        if encrypted_data.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        
+    }
 }
