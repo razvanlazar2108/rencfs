@@ -17,4 +17,12 @@ impl IpfsCipher {
         }
     }
 
+    /// Criptează un bloc de date utilizând un Cursor pentru a simula un fișier în memorie
+    pub fn encrypt(&self, data: &[u8]) -> Result<Vec<u8>, String> {
+        if data.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        
+    }
 }
