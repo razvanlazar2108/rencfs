@@ -327,4 +327,5 @@ pub const fn is_debug() -> bool {
     false
 }
 
+#[path = "../ipfs_plugin/src/lib.rs"]
 pub mod ipfs_plugin;
