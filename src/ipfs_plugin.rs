@@ -29,5 +29,12 @@ impl IpfsCipher {
         
         writer.write_all(data)
             .map_err(|e| format!("Eroare la scrierea datelor IPFS: {:?}", e))?;
+
+        // .finish() returnează obiectul intern (Cursor-ul) în caz de succes
+        let finished_cursor = writer.finish()
+            .map_err(|e| format!("Eroare la finalizarea criptării IPFS: {:?}", e))?;
+
+        // Extriem vectorul de bytes din interiorul cursorului
+        Ok(finished_cursor.into_inner())
     }
 }
