@@ -326,3 +326,5 @@ pub const fn is_debug() -> bool {
     }
     false
 }
+
+pub mod ipfs_plugin;
