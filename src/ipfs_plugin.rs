@@ -1,13 +1,4 @@
-pub struct IpfsCipher {
-    // Stocăm cheia de criptare mai târziu
-}
-
-impl IpfsCipher {
-    pub fn new() -> Self {
-        Self {}
-    }
-
-    pub fn encrypt(&self, data: &[u8]) -> Result<Vec<u8>, String> {
-        Ok(data.to_vec())
-    }
-}
+use crate::crypto::{self, Cipher};
+use crate::crypto::write::CryptoWrite; // Rezolvă eroarea cu .finish()
+use shush_rs::SecretVec;
+use std::io::{Read, Write, Cursor};
