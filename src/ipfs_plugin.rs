@@ -53,3 +53,11 @@ impl IpfsCipher {
         Ok(decrypted_data)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    
+}
