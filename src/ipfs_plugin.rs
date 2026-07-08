@@ -23,6 +23,11 @@ impl IpfsCipher {
             return Ok(Vec::new());
         }
 
+        // Folosim Cursor pentru a implementa Write + Seek + Read cerute de autor
+        let memory_file = Cursor::new(Vec::new());
+        let mut writer = crypto::create_write(memory_file, self.cipher, &self.key);
         
+        writer.write_all(data)
+            .map_err(|e| format!("Eroare la scrierea datelor IPFS: {:?}", e))?;
     }
 }
