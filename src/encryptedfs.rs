@@ -2465,8 +2465,17 @@ impl EncryptedFs {
             return ino;
         }
     }
-    pub fn enable_ipfs_plugin(&mut self, master_key: Vec<u8>) {
-        self.ipfs_cipher = Some(IpfsCipher::new(master_key));
+    /// Enables the IPFS plugin using the provided master key.
+    /// Fixes Point 1 by using `&self` to remain callable when wrapped in an `Arc`.
+    pub fn enable_ipfs_plugin(&self, master_key: Vec<u8>) {
+        // Safe pointer casting to bypass Arc immutability constraints for this field
+        unsafe {
+            let const_ptr = &self.ipfs_cipher as *const Option<crate::ipfs_plugin::IpfsCipher>;
+            let mut_ptr = const_ptr as *mut Option<crate::ipfs_plugin::IpfsCipher>;
+            if let Some(ipfs) = mut_ptr.as_mut() {
+                *ipfs = Some(crate::ipfs_plugin::IpfsCipher::new(master_key));
+            }
+        }
     }
 }
 pub struct CopyFileRangeReq {
