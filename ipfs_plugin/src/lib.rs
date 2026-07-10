@@ -1,4 +1,4 @@
-use crate::crypto::write::CryptoWrite; // Rezolvă eroarea cu .finish()
+use crate::crypto::write::CryptoWrite; // Resolves the error with .finish()
 use crate::crypto::{self, Cipher};
 use shush_rs::SecretVec;
 use std::io::{Cursor, Read, Write};
@@ -9,7 +9,7 @@ pub struct IpfsCipher {
 }
 
 impl IpfsCipher {
-    /// Inițializează plugin-ul cu o cheie sigură și cipher-ul implicit
+    /// Initializes the plugin with a secure key and the default cipher
     pub fn new(secret_key: Vec<u8>) -> Self {
         Self {
             key: SecretVec::from(secret_key),
@@ -17,13 +17,13 @@ impl IpfsCipher {
         }
     }
 
-    /// Criptează un bloc de date utilizând un Cursor pentru a simula un fișier în memorie
+    /// Encrypts a block of data using a Cursor to simulate an in-memory file
     pub fn encrypt(&self, data: &[u8]) -> Result<Vec<u8>, String> {
         if data.is_empty() {
             return Ok(Vec::new());
         }
 
-        // Folosim Cursor pentru a implementa Write + Seek + Read cerute de autor
+        // Use Cursor to implement Write + Seek + Read as required by the author
         let memory_file = Cursor::new(Vec::new());
         let mut writer = crypto::create_write(memory_file, self.cipher, &self.key);
 
@@ -31,16 +31,16 @@ impl IpfsCipher {
             .write_all(data)
             .map_err(|e| format!("Eroare la scrierea datelor IPFS: {:?}", e))?;
 
-        // .finish() returnează obiectul intern (Cursor-ul) în caz de succes
+        // .finish() returns the internal object (the Cursor) on success
         let finished_cursor = writer
             .finish()
             .map_err(|e| format!("Eroare la finalizarea criptării IPFS: {:?}", e))?;
 
-        // Extriem vectorul de bytes din interiorul cursorului
+        // Extract the byte vector from the inner cursor
         Ok(finished_cursor.into_inner())
     }
 
-    /// Decriptează un bloc de date utilizând CryptoRead-ul nativ din rencfs
+    /// Decrypts a block of data using the native CryptoRead from rencfs
     pub fn decrypt(&self, encrypted_data: &[u8]) -> Result<Vec<u8>, String> {
         if encrypted_data.is_empty() {
             return Ok(Vec::new());
@@ -63,13 +63,13 @@ mod tests {
 
     #[test]
     fn test_ipfs_encryption_decryption() {
-        // Generăm o cheie de test de 32 de bytes (pentru ChaCha20Poly1305)
+        // Generate a 32-byte test key (required for ChaCha20Poly1305)
         let test_key = vec![0u8; 32];
         let cipher = IpfsCipher::new(test_key);
 
         let original_data = b"Date secrete trimise prin IPFS cu CID unic!";
 
-        // 1. Criptăm datele
+        // 1. Encrypt the data
         let encrypted = cipher.encrypt(original_data).expect("Criptarea a eșuat");
         assert_ne!(
             original_data.to_vec(),
@@ -77,7 +77,7 @@ mod tests {
             "Datele criptate nu trebuie să fie la fel ca cele originale"
         );
 
-        // 2. Decriptăm datele înapoi
+        // 2. Decrypt the data back
         let decrypted = cipher.decrypt(&encrypted).expect("Decriptarea a eșuat");
         assert_eq!(
             original_data.to_vec(),
