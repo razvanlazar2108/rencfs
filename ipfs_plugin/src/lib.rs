@@ -1,7 +1,7 @@
 use crate::crypto::write::CryptoWrite; // Resolves the error with .finish()
 use crate::crypto::{self, Cipher};
 use shush_rs::SecretVec;
-use std::io::{Cursor, Read, Write};
+use std::io::{Cursor, Read, Write, Error, ErrorKind, Result};
 
 pub struct IpfsCipher {
     key: SecretVec<u8>,
@@ -25,7 +25,7 @@ impl IpfsCipher {
     }
 
     /// Encrypts a block of data using a Cursor to simulate an in-memory file
-    pub fn encrypt(&self, data: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn encrypt(&self, data: &[u8]) -> Result<Vec<u8>> {
         if data.is_empty() {
             return Ok(Vec::new());
         }
@@ -36,19 +36,19 @@ impl IpfsCipher {
 
         writer
             .write_all(data)
-            .map_err(|e| format!("Error writing IPFS data: {:?}", e))?;
+            .map_err(|e| Error::new(ErrorKind::Other, format!("Error writing IPFS data: {:?}", e)))?;
 
         // .finish() returns the internal object (the Cursor) on success
         let finished_cursor = writer
             .finish()
-            .map_err(|e| format!("Error finalizing IPFS encryption: {:?}", e))?;
+            .map_err(|e| Error::new(ErrorKind::Other, format!("Error finalizing IPFS encryption: {:?}", e)))?;
 
         // Extract the byte vector from the inner cursor
         Ok(finished_cursor.into_inner())
     }
 
     /// Decrypts a block of data using the native CryptoRead from rencfs
-    pub fn decrypt(&self, encrypted_data: &[u8]) -> Result<Vec<u8>, String> {
+    pub fn decrypt(&self, encrypted_data: &[u8]) -> Result<Vec<u8>> {
         if encrypted_data.is_empty() {
             return Ok(Vec::new());
         }
@@ -58,7 +58,7 @@ impl IpfsCipher {
 
         reader
             .read_to_end(&mut decrypted_data)
-            .map_err(|e| format!("Error decrypting IPFS data: {:?}", e))?;
+            .map_err(|e| Error::new(ErrorKind::Other, format!("Error decrypting IPFS data: {:?}", e)))?;
 
         Ok(decrypted_data)
     }
