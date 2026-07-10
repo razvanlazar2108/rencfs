@@ -11,6 +11,13 @@ pub struct IpfsCipher {
 impl IpfsCipher {
     /// Initializes the plugin with a secure key and the default cipher
     pub fn new(secret_key: Vec<u8>) -> Self {
+        // Validate key length to prevent downstream library panics (Point 3 in review)
+        assert_eq!(
+            secret_key.len(), 
+            32, 
+            "Invalid key length for ChaCha20Poly1305. Expected exactly 32 bytes."
+        );
+
         Self {
             key: SecretVec::from(secret_key),
             cipher: Cipher::ChaCha20Poly1305,
@@ -29,12 +36,12 @@ impl IpfsCipher {
 
         writer
             .write_all(data)
-            .map_err(|e| format!("Eroare la scrierea datelor IPFS: {:?}", e))?;
+            .map_err(|e| format!("Error writing IPFS data: {:?}", e))?;
 
         // .finish() returns the internal object (the Cursor) on success
         let finished_cursor = writer
             .finish()
-            .map_err(|e| format!("Eroare la finalizarea criptării IPFS: {:?}", e))?;
+            .map_err(|e| format!("Error finalizing IPFS encryption: {:?}", e))?;
 
         // Extract the byte vector from the inner cursor
         Ok(finished_cursor.into_inner())
@@ -51,7 +58,7 @@ impl IpfsCipher {
 
         reader
             .read_to_end(&mut decrypted_data)
-            .map_err(|e| format!("Eroare la decriptarea datelor IPFS: {:?}", e))?;
+            .map_err(|e| format!("Error decrypting IPFS data: {:?}", e))?;
 
         Ok(decrypted_data)
     }
@@ -67,22 +74,30 @@ mod tests {
         let test_key = vec![0u8; 32];
         let cipher = IpfsCipher::new(test_key);
 
-        let original_data = b"Date secrete trimise prin IPFS cu CID unic!";
+        let original_data = b"Secret data sent via IPFS with a unique CID!";
 
         // 1. Encrypt the data
-        let encrypted = cipher.encrypt(original_data).expect("Criptarea a eșuat");
+        let encrypted = cipher.encrypt(original_data).expect("Encryption failed");
         assert_ne!(
             original_data.to_vec(),
             encrypted,
-            "Datele criptate nu trebuie să fie la fel ca cele originale"
+            "Encrypted data must not match the original data"
         );
 
         // 2. Decrypt the data back
-        let decrypted = cipher.decrypt(&encrypted).expect("Decriptarea a eșuat");
+        let decrypted = cipher.decrypt(&encrypted).expect("Decryption failed");
         assert_eq!(
             original_data.to_vec(),
             decrypted,
-            "Datele decriptate nu se potrivesc cu cele originale"
+            "Decrypted data does not match the original data"
         );
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid key length")]
+    fn test_invalid_key_length_panics() {
+        // Test that an invalid key length triggers the validation assert
+        let short_key = vec![0u8; 16];
+        let _cipher = IpfsCipher::new(short_key);
     }
 }
