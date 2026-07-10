@@ -2,10 +2,12 @@ use crate::crypto::write::CryptoWrite; // Resolves the error with .finish()
 use crate::crypto::{self, Cipher};
 use shush_rs::SecretVec;
 use std::io::{Cursor, Read, Write, Error, ErrorKind, Result};
+use std::sync::Mutex; // Required for reusable decryption buffer
 
 pub struct IpfsCipher {
     key: SecretVec<u8>,
     cipher: Cipher,
+    dec_buffer: Mutex<Vec<u8>>, // Reusable buffer for decryption
 }
 
 impl IpfsCipher {
@@ -21,6 +23,7 @@ impl IpfsCipher {
         Self {
             key: SecretVec::from(secret_key),
             cipher: Cipher::ChaCha20Poly1305,
+            dec_buffer: Mutex::new(Vec::with_capacity(1024 * 64)), // Pre-allocate 64KB
         }
     }
 
@@ -30,8 +33,9 @@ impl IpfsCipher {
             return Ok(Vec::new());
         }
 
-        // Use Cursor to implement Write + Seek + Read as required by the author
-        let memory_file = Cursor::new(Vec::new());
+        // Pre-allocate capacity matching data size to satisfy 'static bounds without reallocation churn
+        let estimated_capacity = data.len() + 256;
+        let memory_file = Cursor::new(Vec::with_capacity(estimated_capacity));
         let mut writer = crypto::create_write(memory_file, self.cipher, &self.key);
 
         writer
@@ -53,14 +57,18 @@ impl IpfsCipher {
             return Ok(Vec::new());
         }
 
+        let mut buffer_guard = self.dec_buffer.lock().map_err(|_| {
+            Error::new(ErrorKind::Other, "Failed to lock decryption buffer lock")
+        })?;
+        buffer_guard.clear();
+
         let mut reader = crypto::create_read(encrypted_data, self.cipher, &self.key);
-        let mut decrypted_data = Vec::new();
 
         reader
-            .read_to_end(&mut decrypted_data)
+            .read_to_end(&mut *buffer_guard)
             .map_err(|e| Error::new(ErrorKind::Other, format!("Error decrypting IPFS data: {:?}", e)))?;
 
-        Ok(decrypted_data)
+        Ok(buffer_guard.to_vec())
     }
 }
 
