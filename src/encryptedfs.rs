@@ -641,8 +641,6 @@ impl EncryptedFs {
         arc.ensure_root_exists().await?;
 
         Ok(arc)
-
-        
     }
 
     pub fn exists(&self, ino: u64) -> bool {

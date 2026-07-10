@@ -1,7 +1,7 @@
-use crate::crypto::{self, Cipher};
 use crate::crypto::write::CryptoWrite; // Rezolvă eroarea cu .finish()
+use crate::crypto::{self, Cipher};
 use shush_rs::SecretVec;
-use std::io::{Read, Write, Cursor};
+use std::io::{Cursor, Read, Write};
 
 pub struct IpfsCipher {
     key: SecretVec<u8>,
@@ -26,12 +26,14 @@ impl IpfsCipher {
         // Folosim Cursor pentru a implementa Write + Seek + Read cerute de autor
         let memory_file = Cursor::new(Vec::new());
         let mut writer = crypto::create_write(memory_file, self.cipher, &self.key);
-        
-        writer.write_all(data)
+
+        writer
+            .write_all(data)
             .map_err(|e| format!("Eroare la scrierea datelor IPFS: {:?}", e))?;
 
         // .finish() returnează obiectul intern (Cursor-ul) în caz de succes
-        let finished_cursor = writer.finish()
+        let finished_cursor = writer
+            .finish()
             .map_err(|e| format!("Eroare la finalizarea criptării IPFS: {:?}", e))?;
 
         // Extriem vectorul de bytes din interiorul cursorului
@@ -47,7 +49,8 @@ impl IpfsCipher {
         let mut reader = crypto::create_read(encrypted_data, self.cipher, &self.key);
         let mut decrypted_data = Vec::new();
 
-        reader.read_to_end(&mut decrypted_data)
+        reader
+            .read_to_end(&mut decrypted_data)
             .map_err(|e| format!("Eroare la decriptarea datelor IPFS: {:?}", e))?;
 
         Ok(decrypted_data)
@@ -68,10 +71,18 @@ mod tests {
 
         // 1. Criptăm datele
         let encrypted = cipher.encrypt(original_data).expect("Criptarea a eșuat");
-        assert_ne!(original_data.to_vec(), encrypted, "Datele criptate nu trebuie să fie la fel ca cele originale");
+        assert_ne!(
+            original_data.to_vec(),
+            encrypted,
+            "Datele criptate nu trebuie să fie la fel ca cele originale"
+        );
 
         // 2. Decriptăm datele înapoi
         let decrypted = cipher.decrypt(&encrypted).expect("Decriptarea a eșuat");
-        assert_eq!(original_data.to_vec(), decrypted, "Datele decriptate nu se potrivesc cu cele originale");
+        assert_eq!(
+            original_data.to_vec(),
+            decrypted,
+            "Datele decriptate nu se potrivesc cu cele originale"
+        );
     }
 }
