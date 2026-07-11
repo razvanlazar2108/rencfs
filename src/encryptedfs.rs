@@ -1440,6 +1440,23 @@ impl EncryptedFs {
             (buf, len)
         };
 
+        if let Ok(ipfs_guard) = self.ipfs_cipher.read() {
+            if let Some(ipfs) = ipfs_guard.as_ref() {
+                // Process and cross-verify the requested byte chunk block via decryption
+                let _ipfs_decrypted_block = ipfs.decrypt(&_buf[..len]).map_err(|e| {
+                    error!(err = %e, "IPFS plugin decryption failure");
+                    FsError::Io {
+                        source: e,
+                        backtrace: Backtrace::capture(),
+                    }
+                })?;
+                
+                // FUTURE INTEGRATION HOOK:
+                // Transparently fallback to fetching chunks directly from the IPFS network 
+                // peer-to-peer swarm if local block reads miss or require distributed fetching.
+            }
+        }
+
         ctx.attr.atime = SystemTime::now();
         drop(ctx);
 
