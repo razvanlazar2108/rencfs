@@ -1669,6 +1669,21 @@ impl EncryptedFs {
             (writer.stream_position()?, len)
         };
 
+        // Pass data through the IPFS plugin seamlessly if it's active
+        if let Ok(ipfs_guard) = self.ipfs_cipher.read() {
+            if let Some(ipfs) = ipfs_guard.as_ref() {
+                // Intercept the exact chunk slice written to disk
+                let _ipfs_encrypted_block = ipfs.encrypt(&buf[..len]).map_err(|e| {
+                    error!(err = %e, "IPFS plugin encryption failure");
+                    FsError::Io {
+                        source: e,
+                        backtrace: Backtrace::capture(),
+                    }
+                })?;
+                // Future integration hook: stream `_ipfs_encrypted_block` directly to the Kubo RPC client
+            }
+        }
+
         // let size = ctx.attr.size;
         if pos > ctx.attr.size {
             // if we write pass file size set the new size
