@@ -575,7 +575,7 @@ pub struct EncryptedFs {
     sizes_read: Mutex<HashMap<u64, AtomicU64>>,
     requested_read: Mutex<HashMap<u64, AtomicU64>>,
     read_only: bool,
-    pub ipfs_cipher: Option<IpfsCipher>,
+    pub ipfs_cipher: std::sync::RwLock<Option<IpfsCipher>>,
 }
 
 impl EncryptedFs {
@@ -629,7 +629,7 @@ impl EncryptedFs {
             sizes_read: Mutex::default(),
             requested_read: Mutex::default(),
             read_only,
-            ipfs_cipher: None,
+            ipfs_cipher: std::sync::RwLock::new(None),
         };
 
         let arc = Arc::new(fs);
@@ -2466,15 +2466,10 @@ impl EncryptedFs {
         }
     }
     /// Enables the IPFS plugin using the provided master key.
-    /// Fixes Point 1 by using `&self` to remain callable when wrapped in an `Arc`.
+    /// Fixes Point 1 and removes Undefined Behavior by using a safe RwLock synchronization primitive.
     pub fn enable_ipfs_plugin(&self, master_key: Vec<u8>) {
-        // Safe pointer casting to bypass Arc immutability constraints for this field
-        unsafe {
-            let const_ptr = &self.ipfs_cipher as *const Option<crate::ipfs_plugin::IpfsCipher>;
-            let mut_ptr = const_ptr as *mut Option<crate::ipfs_plugin::IpfsCipher>;
-            if let Some(ipfs) = mut_ptr.as_mut() {
-                *ipfs = Some(crate::ipfs_plugin::IpfsCipher::new(master_key));
-            }
+        if let Ok(mut guard) = self.ipfs_cipher.write() {
+            *guard = Some(crate::ipfs_plugin::IpfsCipher::new(master_key));
         }
     }
 }
